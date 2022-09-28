@@ -11,14 +11,14 @@ const refs = {
   gallery: document.querySelector('.gallery'),
 };
 
-// const basicLightbox = require('basiclightbox');
 const DEBAUNC_DILEY = 300;
 let PAGE_NUMBER = 0;
 let USER_INPUT = '';
 
+window.addEventListener('scroll', debaunc(infinitScrol, 500));
 refs.form.addEventListener('input', debaunc(onInputType, DEBAUNC_DILEY));
 refs.form.addEventListener('submit', onTypeSubmit);
-refs.gallery.addEventListener('click', onClickGalleryImg, { once: true });
+refs.gallery.addEventListener('click', onClickGalleryImg);
 
 // Запит користувача......
 function onInputType(e) {
@@ -118,14 +118,16 @@ function renderMarkup({ hits }) {
 // Модалка,,,,,,,,,
 function onClickGalleryImg(e) {
   e.preventDefault();
+
   if (e.target.nodeName !== 'IMG') {
     return;
   }
 
-  new SimpleLightbox('.gallery a', {
+  laigtBox = new SimpleLightbox('.gallery a', {
     captions: true,
     captionsData: 'alt',
     captionDelay: 250,
+    close: true,
   });
 }
 
@@ -142,15 +144,68 @@ function clearGallary() {
   refs.gallery.innerHTML = '';
 }
 
-// Плавний скрол
-function slowScrol() {
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .lastElementChild.getBoundingClientRect();
+// Бесконечная загрузка .........
 
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
-  console.log(cat);
+function infinitScrol() {
+  const lastElement = refs.gallery.lastElementChild;
+  const target = lastElement;
+  const options = {
+    root: document.querySelector(null),
+    rootMargin: '700px',
+    threshold: 0.25,
+  };
+
+  const callback = function (entries, observer) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        PAGE_NUMBER += 1;
+        fetchSubmit(USER_INPUT, PAGE_NUMBER)
+          .then(infinitRenderMarkup)
+          .catch(ifRequestLimit);
+        return;
+      }
+    });
+  };
+
+  const observer = new IntersectionObserver(callback, options);
+
+  observer.observe(target);
+}
+
+function infinitRenderMarkup({ hits }) {
+  const markupGalery = hits
+    .map(
+      ({
+        webformatURL,
+        largeImageURL,
+        tags,
+        likes,
+        views,
+        comments,
+        downloads,
+      }) => {
+        return `
+        <div class="photo-card">
+       <a class="gallery__item" href="${largeImageURL}">
+       <img class="gallery__image" src="${webformatURL}" alt="${tags}" loading="lazy" width="200" height="150"/>
+       </a>
+       <div class="info">
+         <p class="info-item">
+           <b>Likes: ${likes}</b>
+         </p>
+         <p class="info-item">
+           <b>Views: ${views}</b>
+         </p>
+         <p class="info-item">
+           <b>Comments: ${comments}</b>
+         </p>
+         <p class="info-item">
+           <b>Downloads: ${downloads}</b>
+         </p>
+       </div>
+       </div>`;
+      }
+    )
+    .join('');
+  refs.gallery.insertAdjacentHTML('beforeend', markupGalery);
 }
