@@ -14,8 +14,9 @@ const refs = {
 const DEBAUNC_DILEY = 300;
 let PAGE_NUMBER = 0;
 let USER_INPUT = '';
+let HIT = 0;
 
-window.addEventListener('scroll', debaunc(infinitScrol, 500));
+// window.addEventListener('scroll', debaunc(infinitScrol, 500));
 refs.form.addEventListener('input', debaunc(onInputType, DEBAUNC_DILEY));
 refs.form.addEventListener('submit', onTypeSubmit);
 refs.gallery.addEventListener('click', onClickGalleryImg);
@@ -78,6 +79,7 @@ function ifRequestLimit({ totalHits }) {
 
 // рендер розмітки .......
 function renderMarkup({ hits }) {
+  HIT = hits.length;
   const markupGalery = hits
     .map(
       ({
@@ -146,34 +148,35 @@ function clearGallary() {
 
 // Бесконечная загрузка .........
 
-function infinitScrol() {
-  const lastElement = refs.gallery.lastElementChild;
-  const target = lastElement;
-  const options = {
-    root: document.querySelector(null),
-    rootMargin: '700px',
-    threshold: 0.25,
-  };
+const target = document.querySelector('.sentinel');
+const options = {
+  root: document.querySelector(null),
+  rootMargin: '700px',
+  threshold: 0.25,
+};
 
-  const callback = function (entries, observer) {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        PAGE_NUMBER += 1;
-        fetchSubmit(USER_INPUT, PAGE_NUMBER)
-          .then(infinitRenderMarkup)
-          .catch(ifRequestLimit);
-        return;
-      }
-    });
-  };
+const callback = function (entries, observer) {
+  entries.forEach(entry => {
+    if (USER_INPUT === '' || HIT < 40) {
+      return;
+    }
 
-  const observer = new IntersectionObserver(callback, options);
+    if (entry.isIntersecting) {
+      PAGE_NUMBER += 1;
+      fetchSubmit(USER_INPUT, PAGE_NUMBER)
+        .then(infinitRenderMarkup)
+        .catch(ifRequestLimit);
+    }
+  });
+};
 
-  observer.observe(target);
-}
+const observer = new IntersectionObserver(callback, options);
 
-function infinitRenderMarkup({ hits }) {
-  const markupGalery = hits
+observer.observe(target);
+
+function infinitRenderMarkup(data) {
+  HIT = data.hits.length;
+  const markupGalery = data.hits
     .map(
       ({
         webformatURL,

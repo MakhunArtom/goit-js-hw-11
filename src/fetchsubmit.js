@@ -7,12 +7,6 @@ export async function fetchSubmit(name, page) {
   const option = `&image_type=photo&orientation=horizontal&safesearch=true`;
   const pagination = `&page=${page}&per_page=40`;
 
-  // return fetch(basUrl + key + search + option + pagination).then(response => {
-  //   // if (!response.ok) {
-  //   //   throw new Error(response.status);
-  //   // }
-  //   return response.json();
-  // });
   return await axios(basUrl + key + search + option + pagination).then(
     response => {
       return response.data;
